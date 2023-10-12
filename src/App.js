@@ -7,7 +7,7 @@ import TodoList from './components/TodoList';
 const mockupTodos = [
   {
     id: 0,
-    isDone: true,
+    isDone: false,
     content: '빨래하기',
     createdDate: new Date().getTime(),
   },
@@ -45,7 +45,7 @@ function App() {
         <TodoEditor onCreate={onCreate} />
       </div>
       <div>
-        <TodoList />
+        <TodoList todos={todos} /> {/* props로 todos를 내려줌 */}
       </div>
     </div>
   );
