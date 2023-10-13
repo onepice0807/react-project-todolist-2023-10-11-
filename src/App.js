@@ -1,4 +1,4 @@
-import { useReducer, useRef, useState } from 'react';
+import { useCallback, useReducer, useRef, useState } from 'react';
 import './App.css';
 import Header from './components/Header';
 import TodoEditor from './components/TodoEditor';
@@ -72,7 +72,7 @@ function App() {
   //   idRef.current += 1;
   // }; // ==State 훅으로 상태관리 ==
 
-  const onUpdate = (id) => {
+  const onUpdate = useCallback((id) => {
     // console.log('수정 작업 해야 함!!!');
 
     dispatch({
@@ -87,16 +87,16 @@ function App() {
     //     todo.id === id ? { ...todo, isDone: !todo.isDone } : todo,
     //   ),
     // );
-  };
+  }, []);
 
-  const onDelete = (id) => {
+  const onDelete = useCallback((id) => {
     console.log(`${id}번의 할일을 삭제합니다!!!`);
     dispatch({
       type: 'delete',
       id: id,
     });
     // setTodos(todos.filter((todo) => todo.id !== id));
-  };
+  }, []);
 
   return (
     <div className="App">
