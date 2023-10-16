@@ -1,4 +1,12 @@
-import { useCallback, useReducer, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from 'react';
 import './App.css';
 import Header from './components/Header';
 import TodoEditor from './components/TodoEditor';
@@ -20,20 +28,32 @@ const mockupTodos = [
   },
 ];
 
+export const TodoStateContext = createContext(); // context 객체 생성 (todos를 위한)
+export const TodoDispatchContext = createContext(); // context 객체 생성 (dispatch 함수를 위한)
+
 // state : 상태 변화될 데이터(State), 여기에서는 todos
 // action : State를 어떻게 변화 시킬 것 이냐(dispatch()로부터 넘겨저온 매개변수(객체)를 받음 )
 function reducer(state, action) {
   switch (action.type) {
+    case 'init': {
+      return action.data;
+    }
     case 'create': {
-      return [action.newTodo, ...state];
+      const newTodos = [action.newTodo, ...state];
+      localStorage.setItem('TodoList', JSON.stringify(newTodos));
+      return newTodos;
     }
     case 'update': {
-      return state.map((todo) =>
+      const updateTodos = state.map((todo) =>
         todo.id === action.id ? { ...todo, isDone: !todo.isDone } : todo,
       );
+      localStorage.setItem('TodoList', JSON.stringify(updateTodos));
+      return updateTodos;
     }
     case 'delete': {
-      return state.filter((todo) => todo.id !== action.id);
+      const deleteTodos = state.filter((todo) => todo.id !== action.id);
+      localStorage.setItem('TodoList', JSON.stringify(deleteTodos));
+      return deleteTodos;
     }
     default:
       return state;
@@ -45,9 +65,22 @@ function App() {
 
   // todos라는 데이터의 상태가 변화 될 때 reducer 함수로 변화하는 로직을 관리 하겠다.
   // todos라는 상태는 초기 값으로 mockupTodos를 가지게 된다.
-  const [todos, dispatch] = useReducer(reducer, mockupTodos);
+  const [todos, dispatch] = useReducer(reducer, []);
 
   const idRef = useRef(2);
+
+  useEffect(() => {
+    const rawData = localStorage.getItem('TodoList');
+    const todosData = JSON.parse(rawData);
+    if (!todosData || todosData.length === 0) {
+      return;
+    }
+    dispatch({
+      type: 'init',
+      data: todosData,
+    });
+  }, []);
+
   const onCreate = (content) => {
     // 입력받은 content를 멤버로 하는 새로운 할 일  객체 생성
     dispatch({
@@ -98,18 +131,20 @@ function App() {
     // setTodos(todos.filter((todo) => todo.id !== id));
   }, []);
 
+  const memoizedDispatches = useMemo(
+    () => ({ onCreate, onUpdate, onDelete }),
+    [],
+  );
+
   return (
     <div className="App">
-      <div>
-        <Header />
-      </div>
-      <div>
-        <TodoEditor onCreate={onCreate} />
-      </div>
-      <div>
-        <TodoList todos={todos} onUpdate={onUpdate} onDelete={onDelete} />{' '}
-        {/* props로 todos, onUpdate를 내려줌 */}
-      </div>
+      <Header />
+      <TodoStateContext.Provider value={{ todos }}>
+        <TodoDispatchContext.Provider value={memoizedDispatches}>
+          <TodoEditor />
+          <TodoList /> {/* props로 todos, onUpdate를 내려줌 */}
+        </TodoDispatchContext.Provider>
+      </TodoStateContext.Provider>
     </div>
   );
 }
